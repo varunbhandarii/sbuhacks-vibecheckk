@@ -1,0 +1,12 @@
+# Python
+.venv/
+_pycache_/
+*.pyc
+
+# Config
+.env
+cloud-run.env.yaml
+
+# IDE
+.vscode/
+.idea/
