@@ -5,7 +5,7 @@ import math
 import html
 import time
 from typing import List, Dict, Any, Tuple, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser as dtparse
 import pytz
 
@@ -167,12 +167,49 @@ def _fetch_feed() -> Tuple[List[Dict[str, Any]], str]:
     text_index = "EVENT INDEX (from SBU RSS)\n" + "\n".join(lines)
     return items, text_index
 
+def _filter_upcoming(items: List[Dict[str, Any]], days: int = 7) -> List[Dict[str, Any]]:
+    """Keep only events whose start_time is within the next `days` days."""
+    now = datetime.now(SBU_TZ)
+    cutoff = now + timedelta(days=days)
+    filtered = []
+    for it in items:
+        start_str = it.get("start_time")
+        if not start_str:
+            continue  # skip events with no start time
+        start_dt = _parse_dt(start_str)
+        if start_dt and now <= start_dt <= cutoff:
+            filtered.append(it)
+    return filtered
+
 def _get_feed_cached() -> Tuple[List[Dict[str, Any]], str]:
     now = time.time()
     if now - _FEED_CACHE["fetched_at"] < CACHE_TTL_SECONDS and _FEED_CACHE["items"]:
         return _FEED_CACHE["items"], _FEED_CACHE["raw_text"]
     try:
-        items, text = _fetch_feed()
+        items, _ = _fetch_feed()
+        items = _filter_upcoming(items, days=7)
+        # Rebuild the text index from the filtered set
+        lines = []
+        for it in items[:MAX_EVENTS_TO_INCLUDE]:
+            start_local = ""
+            if it["start_time"]:
+                dt = _parse_dt(it["start_time"])
+                if dt:
+                    start_local = dt.strftime("%a %b %d, %I:%M %p")
+            end_local = ""
+            if it["end_time"]:
+                dt2 = _parse_dt(it["end_time"])
+                if dt2:
+                    end_local = dt2.strftime("%I:%M %p")
+            when = f"{start_local}\u2013{end_local}" if end_local else start_local
+            cats = ", ".join(it["categories"]) if it["categories"] else ""
+            loc = it["location"] or ""
+            line = f"- {it['title']} | {when} | {loc} | {cats}"
+            if it["description"]:
+                short = it["description"][:180]
+                line += f" | {short}"
+            lines.append(line)
+        text = "EVENT INDEX (upcoming 7 days from SBU RSS)\n" + "\n".join(lines)
         _FEED_CACHE["items"] = items
         _FEED_CACHE["raw_text"] = text
         _FEED_CACHE["fetched_at"] = now
