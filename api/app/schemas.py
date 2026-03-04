@@ -202,13 +202,21 @@ class AIQueryRequest(BaseModel):
     # NEW: Conversation history for context-aware responses
     conversation_history: Optional[List[ConversationMessage]] = []
 
+class AIEventCard(BaseModel):
+    """Lightweight event card for AI chat responses (no UUID required)."""
+    id: str  # URL or slug — used as React key and link target
+    title: str
+    description: Optional[str] = ""
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    location_name: Optional[str] = ""
+    tags: List[str] = []
+    image_url: Optional[str] = ""
+
 class AIQueryResponse(BaseModel):
     """The rich response from the AI."""
-    # The natural language answer from Gemini
     text_response: str
-    
-    # The raw event data Gemini used (for the frontend to render cards)
-    events: List[EventPublic] = []
+    events: List[AIEventCard] = []
     
 
 class SpacePublic(BaseModel):

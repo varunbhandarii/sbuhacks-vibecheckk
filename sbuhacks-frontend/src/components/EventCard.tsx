@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { type SBUEvent } from '../types';
 import VibeBadge from './VibeBadge';
 import RSVPCountBadge from './RSVPCountBadge';
-import { MapPin, Calendar } from 'lucide-react';
+import { MapPin, Calendar, ArrowUpRight } from 'lucide-react';
 
 interface EventCardProps { event: SBUEvent; variant?: 'default' | 'featured' }
 
@@ -29,60 +29,56 @@ export default function EventCard({ event, variant = 'default' }: EventCardProps
     <Link
       to={`/event/${event.id}`}
       aria-label={`Open event: ${event.title}`}
-      className={`event-card-glow group block overflow-hidden rounded-[24px] glass-strong flex h-full flex-col outline-none focus-visible:ring-2 focus-visible:ring-neon-cyan ${variant === 'featured' ? 'md:min-w-[360px]' : ''}`}
+      className={`card-hover group flex h-full flex-col overflow-hidden rounded-3xl border border-white/[0.06] bg-mono-50 outline-none focus-visible:ring-1 focus-visible:ring-white/30 ${variant === 'featured' ? 'md:min-w-[360px]' : ''}`}
     >
-      {/* Media Header */}
-      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-gray-900">
+      {/* Image */}
+      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-mono-100">
         <img
           src={event.image_url || FALLBACK_IMG}
           alt={`${event.title} cover`}
           loading="lazy"
           onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG; }}
-          className="h-full w-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
+          className="h-full w-full object-cover grayscale-[20%] transition-all duration-700 group-hover:scale-105 group-hover:grayscale-0"
         />
-        {/* Gradients to pop text */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/40 to-transparent" />
-        
-        {/* Date chip */}
-        <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-xs font-bold tracking-wide text-white backdrop-blur-md ring-1 ring-white/20">
-          <Calendar size={14} className="text-neon-cyan" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-mono-50 via-transparent to-transparent" />
+
+        {/* Date tag */}
+        <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white backdrop-blur-md">
+          <Calendar size={12} className="opacity-60" />
           <time dateTime={new Date(event.start_time).toISOString()}>{formatShortDate(event.start_time)}</time>
         </div>
 
-        {/* Live pulse */}
+        {/* Live badge */}
         {live && (
-          <div className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-red-600/80 px-3 py-1.5 text-[11px] font-black tracking-widest text-white backdrop-blur-md ring-1 ring-red-400/50 vol-shadow">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-white shadow-[0_0_8px_white]" /> LIVE
+          <div className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-black">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" /> Live
           </div>
         )}
 
-        {/* Title overlay */}
-        <div className="absolute bottom-0 left-0 w-full p-4">
-           <h3 className="line-clamp-2 text-xl md:text-2xl font-black leading-tight tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] transition-colors duration-300 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-neon-cyan">
-            {event.title}
-          </h3>
+        {/* Arrow on hover */}
+        <div className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/0 text-white opacity-0 transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:opacity-100">
+          <ArrowUpRight size={16} />
         </div>
       </div>
 
-      {/* Content Body */}
+      {/* Body */}
       <div className="flex flex-1 flex-col justify-between gap-4 p-5">
-        
         <div className="flex flex-col gap-3">
-          {/* Location */}
+          <h3 className="line-clamp-2 text-lg font-bold leading-snug tracking-tight text-white transition-colors">
+            {event.title}
+          </h3>
+
           {event.location_name && (
-            <p className="inline-flex items-center gap-2 text-sm font-medium tracking-wide text-gray-300">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neon-pink/10 text-neon-pink ring-1 ring-neon-pink/20">
-                <MapPin size={12} />
-              </span>
+            <p className="inline-flex items-center gap-2 text-[13px] text-mono-500">
+              <MapPin size={13} className="opacity-50" />
               <span className="line-clamp-1">{event.location_name}</span>
             </p>
           )}
 
-          {/* Tags */}
           {!!event.tags?.length && (
             <div className="flex flex-wrap gap-2">
               {event.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="rounded-md bg-white/5 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-neon-cyan ring-1 ring-white/10 transition-colors group-hover:bg-neon-cyan/10 group-hover:ring-neon-cyan/30">
+                <span key={tag} className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-mono-500">
                   {tag}
                 </span>
               ))}
@@ -90,8 +86,7 @@ export default function EventCard({ event, variant = 'default' }: EventCardProps
           )}
         </div>
 
-        {/* Footer badges */}
-        <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/5 pt-4">
+        <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
           {event.rsvp_counts && <RSVPCountBadge counts={event.rsvp_counts} />}
           <VibeBadge targetId={event.id} targetType="event" />
         </div>

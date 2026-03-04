@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session  # kept to satisfy your Depends(get_db) signature
 
 from app.dependencies import get_db
-from app.schemas import AIQueryRequest, AIQueryResponse
+from app.schemas import AIQueryRequest, AIQueryResponse, AIEventCard
 from app.core.config import settings
 from app.api.ai_system_instructions import VIBECHECK_SYSTEM_INSTRUCTIONS
 
@@ -341,11 +341,54 @@ def post_ai_query(query: AIQueryRequest, db: Session = Depends(get_db)):
     if not text_out:
         text_out = "Hmm, I couldn’t pull anything useful from the feed right now. Try asking about a specific topic or time (e.g., “AI events this week”)."
 
-    # (Optional) If you later decide to make Gemini output JSON of selected items, you can parse here
-    # parsed = _safe_json_extract(text_out)
-    # selected_events = ...  # map back to feed_items if you include unique URLs in JSON
-    # For now, we just return the text; frontend keeps working.
+    # 6) Match events mentioned in the LLM response to DB records
+    text_lower = text_out.lower()
+    matched_events: list[AIEventCard] = []
+    seen_titles: set[str] = set()
+
+    # Build a list of candidate titles from the feed
+    candidate_titles: list[str] = []
+    for it in feed_items:
+        t = it.get("title") or ""
+        if t:
+            candidate_titles.append(t)
+
+    # Find which feed titles are mentioned in the response
+    mentioned_titles: list[str] = []
+    for title in candidate_titles:
+        if title.lower() in seen_titles:
+            continue
+        title_words = [w for w in re.findall(r'[a-z0-9]+', title.lower()) if len(w) > 2]
+        if not title_words:
+            continue
+        word_hits = sum(1 for w in title_words if w in text_lower)
+        match_ratio = word_hits / len(title_words)
+        if match_ratio >= 0.70:
+            seen_titles.add(title.lower())
+            mentioned_titles.append(title)
+        if len(mentioned_titles) >= 10:
+            break
+
+    # Look up mentioned events in the database by title
+    if mentioned_titles:
+        from app.models import Event as EventModel
+        for title in mentioned_titles:
+            db_event = db.query(EventModel).filter(
+                EventModel.title == title
+            ).first()
+            if db_event:
+                matched_events.append(AIEventCard(
+                    id=str(db_event.id),
+                    title=db_event.title,
+                    description=(db_event.description or "")[:200],
+                    start_time=db_event.start_time.isoformat() if db_event.start_time else None,
+                    end_time=db_event.end_time.isoformat() if db_event.end_time else None,
+                    location_name=db_event.location_name or "",
+                    tags=db_event.tags or [],
+                    image_url=db_event.image_url or "",
+                ))
+
     return AIQueryResponse(
         text_response=text_out,
-        events=[],
+        events=matched_events,
     )

@@ -7,13 +7,13 @@ export default function RSVPCountBadge({ counts }: RSVPCountBadgeProps) {
   return (
     <div className="flex flex-wrap items-center gap-2" aria-label="RSVP summary">
       {counts.going > 0 && (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-600/25 px-3 py-1 text-xs font-medium text-green-100" title={`${counts.going} going`}>
-          <Users size={14} aria-hidden="true" /> <span className="sr-only">Going: </span>{counts.going} Going
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-[11px] font-semibold text-mono-700" title={`${counts.going} going`}>
+          <Users size={12} className="opacity-50" aria-hidden="true" /> <span className="sr-only">Going: </span>{counts.going} Going
         </span>
       )}
       {counts.interested > 0 && (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-600/25 px-3 py-1 text-xs font-medium text-yellow-100" title={`${counts.interested} interested`}>
-          <Star size={14} aria-hidden /> <span className="sr-only">Interested: </span>{counts.interested} Interested
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-[11px] font-semibold text-mono-500" title={`${counts.interested} interested`}>
+          <Star size={12} className="opacity-50" aria-hidden /> <span className="sr-only">Interested: </span>{counts.interested} Interested
         </span>
       )}
     </div>
